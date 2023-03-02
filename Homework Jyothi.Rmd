@@ -1,0 +1,220 @@
+---
+title: "Homework"
+author: "Sai Jyothi"
+date: "2023-03-02"
+output: pdf_document
+---
+
+
+```{r}
+# 9.
+# install.packages("ISLR")
+library(ISLR)
+library(MASS)
+data("Auto")
+head(Auto)
+# 
+# # (a)
+#  qualitative: name, origin
+#  quantitative: mpg, displacement,  cylinders, horsepower,acceleration, year, weight
+
+
+# # (b)
+# # apply the range function to the first seven columns of Auto
+sapply(Auto[, 1:7], range)
+# #       mpg cylinders displacement horsepower weight acceleration year
+# # [1,]  9.0         3           68         46   1613          8.0   70
+# # [2,] 46.6         8          455        230   5140         24.8   82
+
+# (c)
+sapply(Auto[, 1:7], mean)
+#         mpg    cylinders displacement   horsepower       weight acceleration
+#   23.445918     5.471939   194.411990   104.469388  2977.584184    15.541327
+#        year
+#   75.979592
+# 
+sapply(Auto[, 1:7], sd)
+# #         mpg    cylinders displacement   horsepower       weight acceleration
+# #    7.805007     1.705783   104.644004    38.491160   849.402560     2.758864
+# #        year
+# #    3.683737
+# 
+# # (d)
+newAuto = Auto[-(10:85),]
+dim(newAuto) == dim(Auto) - c(76,0)
+newAuto[9,] == Auto[9,]
+newAuto[10,] == Auto[86,]
+
+ sapply(newAuto[, 1:7], range)
+#       mpg cylinders displacement horsepower weight acceleration year
+# [1,] 11.0         3           68         46   1649          8.5   70
+# [2,] 46.6         8          455        230   4997         24.8   82
+ sapply(newAuto[, 1:7], mean)
+#         mpg    cylinders displacement   horsepower       weight acceleration
+#   24.404430     5.373418   187.240506   100.721519  2935.971519    15.726899
+#        year
+#   77.145570
+ sapply(newAuto[, 1:7], sd)
+#         mpg    cylinders displacement   horsepower       weight acceleration
+#    7.867283     1.654179    99.678367    35.708853   811.300208     2.693721
+#        year
+#    3.106217
+
+# # (e)
+ pairs(Auto)
+plot(Auto$mpg, Auto$weight)
+# Heavier weight correlates with lower mpg.
+plot(Auto$mpg, Auto$cylinders)
+# More cylinders, less mpg.
+ plot(Auto$mpg, Auto$year)
+# Cars become more efficient over time.
+# 
+# # (f)
+pairs(Auto)
+# See descriptions of plots in (e).
+# All of the predictors show some correlation with mpg. The name predictor has
+# too little observations per name though, so using this as a predictor is
+# likely to result in overfitting the data and will not generalize well.
+
+```
+
+```{r}
+#### CHAPTER 3 - Question 8
+#### (A)
+attach(Auto)
+lm.fit = lm(mpg ~ horsepower)
+summary(lm.fit)
+
+
+# (i).
+# Yes, Assessing if there is a relationship between horsepower and mpg instead of the null hypothesis that all regression coefficients are equal to zero produced the result. Given that the F-statistic is much larger than 1 and the p-value of the F-statistic is close to zero, we can rule out the null hypothesis and declare that there is a statistically significant relationship between horsepower and mpg..
+
+# (ii).
+# To calculate the residual error in relation to the response, we use the response's mean and RSE. The typical distance is 23.4459 miles. The RSE for the lm.fit was 4.906, which is equal to a 20.9248% error rate. According to the R2 of the lm.fit, which was roughly 0.6059, the change in mpg may be attributed to horsepower to the tune of 60.5948%.
+# 
+# (iii).
+# There is a negative correlation between horsepower and mileage. According to linear regression, the more horsepower a car has, the less fuel it uses. 
+# 
+
+# (iv).
+
+predict(lm.fit, data.frame(horsepower=c(98)), interval="confidence")
+# 
+# 
+# 
+predict(lm.fit, data.frame(horsepower=c(98)), interval="prediction")
+
+
+# 8b.
+plot(horsepower, mpg)
+abline(lm.fit)
+
+# 8c.
+par(mfrow=c(2,2))
+plot(lm.fit)
+```
+
+```{r}
+
+#### Chapter 4
+
+#10 a
+ library(ISLR)
+ summary(Weekly)
+
+ pairs(Weekly)
+
+ cor(Weekly[, -9])
+
+# b
+attach(Weekly)
+glm.fit = glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, data = Weekly,
+    family = binomial)
+summary(glm.fit)
+
+#c
+glm.probs = predict(glm.fit, type = "response")
+glm.pred = rep("Down", length(glm.probs))
+glm.pred[glm.probs > 0.5] = "Up"
+table(glm.pred, Direction)
+
+# d
+ train = (Year < 2009)
+ Weekly.0910 = Weekly[!train, ]
+ glm.fit = glm(Direction ~ Lag2, data = Weekly, family = binomial, subset = train)
+ glm.probs = predict(glm.fit, Weekly.0910, type = "response")
+ glm.pred = rep("Down", length(glm.probs))
+ glm.pred[glm.probs > 0.5] = "Up"
+ Direction.0910 = Direction[!train]
+ table(glm.pred, Direction.0910)
+
+ mean(glm.pred == Direction.0910)
+
+#e
+library(MASS)
+lda.fit = lda(Direction ~ Lag2, data = Weekly, subset = train)
+lda.pred = predict(lda.fit, Weekly.0910)
+table(lda.pred$class, Direction.0910)
+
+mean(lda.pred$class == Direction.0910)
+
+# f
+qda.fit = qda(Direction ~ Lag2, data = Weekly, subset = train)
+qda.class = predict(qda.fit, Weekly.0910)$class
+table(qda.class, Direction.0910)
+
+mean(qda.class == Direction.0910)
+
+# g
+library(class)
+train.X = as.matrix(Lag2[train])
+test.X = as.matrix(Lag2[!train])
+train.Direction = Direction[train]
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.Direction, k = 1)
+table(knn.pred, Direction.0910)
+
+mean(knn.pred == Direction.0910)
+
+#h  Logistic regression and LDA methods provide similar test error rates.
+
+# i
+# Logistic regression with Lag2:Lag1
+glm.fit = glm(Direction ~ Lag2:Lag1, data = Weekly, family = binomial, subset = train)
+glm.probs = predict(glm.fit, Weekly.0910, type = "response")
+glm.pred = rep("Down", length(glm.probs))
+glm.pred[glm.probs > 0.5] = "Up"
+Direction.0910 = Direction[!train]
+table(glm.pred, Direction.0910)
+
+ mean(glm.pred == Direction.0910)
+
+# LDA with Lag2 interaction with Lag1
+lda.fit = lda(Direction ~ Lag2:Lag1, data = Weekly, subset = train)
+lda.pred = predict(lda.fit, Weekly.0910)
+mean(lda.pred$class == Direction.0910)
+
+# QDA with sqrt(abs(Lag2))
+qda.fit = qda(Direction ~ Lag2 + sqrt(abs(Lag2)), data = Weekly, subset = train)
+qda.class = predict(qda.fit, Weekly.0910)$class
+table(qda.class, Direction.0910)
+
+mean(qda.class == Direction.0910)
+
+# KNN k =10
+knn.pred = knn(train.X, test.X, train.Direction, k = 10)
+table(knn.pred, Direction.0910)
+
+mean(knn.pred == Direction.0910)
+
+
+# KNN k = 100
+knn.pred = knn(train.X, test.X, train.Direction, k = 100)
+table(knn.pred, Direction.0910)
+
+mean(knn.pred == Direction.0910)
+```
+
+
+
+
